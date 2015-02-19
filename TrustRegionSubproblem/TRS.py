@@ -156,6 +156,7 @@ def rfzero(laminit, eigval, alpha, delta, itbnd = 50, tol = 1e-12):
 Solves the trust region problem:
 MINIMIZE	: g^T s + 1/2 s^T H s
 SUBJECT TO	: ||s|| <= delta.
+where s is a variable vector of R^n.
 
 <input>
 g			: The above n dimension vertor
@@ -165,8 +166,8 @@ delta		: The above scaler
 <return>
 s, val
 where
-s			: The solution of the trust region problem given by the secular equation: 1/delta - 1/(||s||) = 0.
-val			: The value of the quadratic at the solution
+s			: The optimal solution given by the secular equation as 1/delta - 1/(||s||) = 0
+val			: The optimal value
 '''
 
 def trust(g, H, delta, tolvval = 1e-8, eps = 2 ** -52):
@@ -275,6 +276,8 @@ def trust(g, H, delta, tolvval = 1e-8, eps = 2 ** -52):
 Solves the trust region problem:
 MINIMIZE	: g^T s + 1/2 s^T H s
 SUBJECT TO	: ||s|| <= delta.
+where s is a variable vector of R^n.
+
 
 <input>
 g			: The above n dimension vertor
@@ -284,10 +287,10 @@ delta		: The above scaler
 <return>
 s, val, count, lmbd
 where
-s			: The solution of the trust region problem given by the secular equation: 1/delta - 1/(||s||) = 0.
-val			: The value of the quadratic at the solution
-count		: The number of iterations of the above secular equation
-lmbd		: The value of the corresponding Lagrange multiplier
+s			: The optimal solution given by the secular equation as 1/delta - 1/(||s||) = 0
+val			: The optimal value
+count		: The number of iterations for the secular equation
+lmbd		: The corresponding Lagrange multiplier
 '''
 
 def trustKai(g, H, delta, tolvval = 1e-8, eps = 2 ** -52):
