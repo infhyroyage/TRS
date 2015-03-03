@@ -4,8 +4,8 @@ The Solver for Trust Region Subproblem
 
 ## Description
 It is the solver that handles with the (generalized) trust region subproblem.  
-It transpalents MATLAB `trust()` method by Python 2.x.
-Please see ([File Exchange - MATLAB Central](http://www.mathworks.com/matlabcentral/fileexchange/28013-rosin-rammler-diagram-plotting-tool/content/RRD%20-%20ln/funct/trust.m))
+It transpalents MATLAB `trust()` method by Python 2.x.  
+Please see [File Exchange - MATLAB Central](http://www.mathworks.com/matlabcentral/fileexchange/28013-rosin-rammler-diagram-plotting-tool/content/RRD%20-%20ln/funct/trust.m).
 
 ### (Generalized) Trust Region Subproblem
 (Generalized) trust region subproblem is the following mathematical optimization problem:  
