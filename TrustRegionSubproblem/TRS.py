@@ -7,12 +7,13 @@ Created on 2014/06/21
 # import
 import numpy as np
 from math import sqrt, isnan
+from time import clock
 
 '''
 [seceqn]
 Return the scaler of the secular equation at the scaler lmbd
 '''
-def seceqn(lmbd, eigval, alpha, delta):
+def seceqn(lmbd, eigval, alpha, Delta):
 	M = eigval + lmbd
 	zeroidx = np.where(M == 0.0)
 	MM = alpha
@@ -23,11 +24,11 @@ def seceqn(lmbd, eigval, alpha, delta):
 	if (isnan(value)):
 		value = 0.0
 	
-	return 1.0 / delta - value
+	return 1.0 / Delta - value
 
 '''
 [rfzero]
-Find zero of the finction seceqn(lmbd, eigval, alpha, delta) to the RIGHT of the starting point of the lmbd as x.
+Find zero of the finction seceqn(lmbd, eigval, alpha, Delta) to the RIGHT of the starting point of the lmbd as x.
 A small modification of the M-file fzero to ensure a zero to the Right of x is searched for.
 [rfzero] is a slightly modified version of function FZERO.
 FZERO(F,X) finds a zero of F(X).
@@ -40,7 +41,7 @@ Ordinarily, functions are defined in M-files.
 
 An optional third argument sets the relative tolerance for the convergence test.
 '''
-def rfzero(laminit, eigval, alpha, delta, itbnd = 50, tol = 1e-12):
+def rfzero(laminit, eigval, alpha, Delta, itbnd = 50, tol = 1e-12):
 	# Initialization
 	itfun = 0
 	
@@ -51,22 +52,18 @@ def rfzero(laminit, eigval, alpha, delta, itbnd = 50, tol = 1e-12):
 	
 	a = laminit
 	c = a
-	fa = seceqn(a, eigval, alpha, delta)
+	fa = seceqn(a, eigval, alpha, Delta)
 	itfun += 1
 	
 	b = laminit + dx
-	fb = seceqn(b, eigval, alpha, delta)
+	fb = seceqn(b, eigval, alpha, Delta)
 	itfun += 1
 	
 	# Find change of sign
 	while ((fa > 0.0) == (fb > 0.0)):
 		dx *= 2.0
-		'''
-		if ((fa > 0.0) != (fb > 0.0)):
-			break
-		'''
 		b = laminit + dx
-		fb = seceqn(b, eigval, alpha, delta)
+		fb = seceqn(b, eigval, alpha, Delta)
 		itfun += 1
 		if (itfun > itbnd):
 			break
@@ -146,7 +143,7 @@ def rfzero(laminit, eigval, alpha, delta, itbnd = 50, tol = 1e-12):
 			else:
 				b += toler
 		
-		fb = seceqn(b, eigval, alpha, delta)
+		fb = seceqn(b, eigval, alpha, Delta)
 		itfun += 1
 	
 	return b, itfun
@@ -154,147 +151,31 @@ def rfzero(laminit, eigval, alpha, delta, itbnd = 50, tol = 1e-12):
 '''
 [trust]
 Solves the trust region problem:
-MINIMIZE	: g^T s + 1/2 s^T H s
-SUBJECT TO	: ||s|| <= delta.
-where s is a variable vector of R^n.
-
-<input>
-g			: The above n dimension vertor
-H			: The above n * n square symmetric matrix
-delta		: The above scaler
-
-<return>
-s, val
-where
-s			: The optimal solution given by the secular equation as 1/delta - 1/(||s||) = 0
-val			: The optimal value
-'''
-
-def trust(g, H, delta, tolvval = 1e-8, eps = 2 ** -52):
-	print "------Trust Region Subproblem------"
-	
-	# Set initial constant parameters
-	key = 0
-	lmbd = 0.0
-	laminit = 0.0
-	
-	'''
-	Determine the variables
-	where
-	coeff, alpha	: The n dimension vertor
-	eigval			: The n dimension vector whose elements are the eigenvalues of the input matrix H
-	eigvec			: The n * n square matrix whose whose column elements are the eigenvalues of the input matrix H related with eigval index
-	mineigval		: The minimum value of eigval
-	argmineigval	: The index of mineigval
-	sig				: The scaler
-	''' 
-	coeff = np.zeros(g.size)
-	eigval, eigvec = np.linalg.eig(H)
-	mineigval= np.min(eigval)
-	argmineigval = np.argmin(eigval)
-	alpha = np.dot(eigvec.T, -g)
-	sig = np.sign(alpha[argmineigval]) + (alpha[argmineigval] == 0.0)
-	
-	# Generate n dimension vector as initial solution
-	s = np.zeros(g.size)
-	
-	# POSITIVE DEFINITE CASE
-	if (mineigval > 0.0):
-		coeff = alpha / eigval
-		s = np.dot(eigvec, coeff)
-		# Next 1.0 is mysterious...
-		if (np.linalg.norm(s) <= 1.0 * delta):
-			key = 1
-	else:
-		laminit = -mineigval
-	
-	# INDEFINITE CASE
-	if (key == 0):
-		if (seceqn(laminit, eigval, alpha, delta) > 0.0):
-			b, _ = rfzero(laminit, eigval, alpha, delta)
-			vval = abs(seceqn(b, eigval, alpha, delta))
-			
-			if (vval <= tolvval):
-				lmbd = b
-				key = 2
-				lam = lmbd * np.ones(g.size)
-				w = eigval + lam
-				coeff[w != 0.0] = alpha[w != 0.0] / w[w != 0.0]
-				coeff[np.all([w == 0.0, alpha == 0.0], axis = 0)] = 0.0
-				coeff[np.all([w == 0.0, alpha != 0.0], axis = 0)] = float("Inf")
-				coeff[np.isnan(coeff)] = 0.0
-				s = np.dot(eigvec, coeff)
-				if ((np.linalg.norm(s) > 1.2 * delta) or (np.linalg.norm(s) < 0.8 * delta)):
-					key = 5
-					lmbd = -mineigval
-			else:
-				lmbd = -mineigval
-				key = 3
-		else:
-			lmbd = -mineigval
-			key = 4
-		
-		lam = lmbd * np.ones(g.size)
-		
-		if (key > 2):
-			# KIMOI code
-			#arg = abs(eigval + lam) < 10.0 * eps * max(abs(eigval), 1.0)
-			#alpha[arg] = 0.0
-			alpha[abs(eigval + lam) < 10.0 * eps * max(abs(eigval), 1.0)] = 0.0
-		
-		w = eigval + lam
-		coeff[w != 0.0] = alpha[w != 0.0] / w[w != 0.0]
-		coeff[np.all([w == 0.0, alpha == 0.0], axis = 0)] = 0.0
-		coeff[np.all([w == 0.0, alpha != 0.0], axis = 0)] = float("Inf")
-		coeff[np.isnan(coeff)] = 0.0
-		s = np.dot(eigvec, coeff)
-		nrms = np.linalg.norm(s)
-		
-		if ((key > 2) and (nrms < 0.8 * delta)):
-			s += sqrt(delta ** 2 - nrms ** 2) * sig * eigvec[:, argmineigval]
-		
-		if ((key > 2) and (nrms > 1.2 * delta)):
-			b, _ = rfzero(laminit, eigval, alpha, delta)
-			lmbd = b
-			lam = lmbd * np.ones(g.size)
-			w = eigval + lam
-			coeff[w != 0.0] = alpha[w != 0.0] / w[w != 0.0]
-			coeff[np.all([w == 0.0, alpha == 0.0], axis = 0)] = 0.0
-			coeff[np.all([w == 0.0, alpha != 0.0], axis = 0)] = float("Inf")
-			coeff[np.isnan(coeff)] = 0.0
-			s = np.dot(eigvec, coeff)
-	
-	print "Solution :", s
-	print "Radius   :", np.sqrt(np.linalg.norm(s) ** 2)
-	print "Value    :", np.dot(g, s) + 0.5 * np.dot(s, np.dot(H, s))
-	print "-> Finished!!\n"
-	
-	return s, np.dot(g, s) + 0.5 * np.dot(s, np.dot(H, s))
-
-'''
-[trustKai]
-Solves the trust region problem:
-MINIMIZE	: g^T s + 1/2 s^T H s
-SUBJECT TO	: ||s|| <= delta.
-where s is a variable vector of R^n.
+MINIMIZE	: g^T x + 1/2 x^T H x
+SUBJECT TO	: ||x|| <= Delta.
+where x is a variable vector of R^n.
 
 
 <input>
-g			: The above n dimension vertor
-H			: The above n * n square symmetric matrix
-delta		: The above scaler
+g		: The above n dimension vertor
+H		: The above n * n square symmetric matrix
+Delta	: The above scaler
 
 <return>
-s, val, count, lmbd
+sol, val, time, count, lmbd
 where
-s			: The optimal solution given by the secular equation as 1/delta - 1/(||s||) = 0
-val			: The optimal value
-count		: The number of iterations for the secular equation
-lmbd		: The corresponding Lagrange multiplier
+sol		: The optimal solution given by the secular equation as 1/Delta - 1/(||x||) = 0
+val		: The optimal value
+time	: The calculation time(ms)
+count	: The number of iterations for the secular equation
+lmbd	: The corresponding Lagrange multiplier
 '''
 
-def trustKai(g, H, delta, tolvval = 1e-8, eps = 2 ** -52):
+def trust(g, H, Delta, tolvval = 1e-8, eps = 2 ** -52):
 	print "------Trust Region Subproblem------"
+	
+	# Start the timer
+	t_start = clock()
 	
 	# Set initial constant parameters
 	key = 0
@@ -320,23 +201,22 @@ def trustKai(g, H, delta, tolvval = 1e-8, eps = 2 ** -52):
 	sig = np.sign(alpha[argmineigval]) + (alpha[argmineigval] == 0.0)
 	
 	# Generate n dimension vector as initial solution
-	s = np.zeros(g.size)
+	sol = np.zeros(g.size)
 	
 	# POSITIVE DEFINITE CASE
 	if (mineigval > 0.0):
 		coeff = alpha / eigval
-		s = np.dot(eigvec, coeff)
-		# Next 1.0 is mysterious...
-		if (np.linalg.norm(s) <= 1.0 * delta):
+		sol = np.dot(eigvec, coeff)
+		if (np.linalg.norm(sol) <= 1.0 * Delta):
 			key = 1
 	else:
 		laminit = -mineigval
 	
 	# INDEFINITE CASE
 	if (key == 0):
-		if (seceqn(laminit, eigval, alpha, delta) > 0.0):
-			b, count = rfzero(laminit, eigval, alpha, delta)
-			vval = abs(seceqn(b, eigval, alpha, delta))
+		if (seceqn(laminit, eigval, alpha, Delta) > 0.0):
+			b, count = rfzero(laminit, eigval, alpha, Delta)
+			vval = abs(seceqn(b, eigval, alpha, Delta))
 			
 			if (vval <= tolvval):
 				lmbd = b
@@ -347,8 +227,8 @@ def trustKai(g, H, delta, tolvval = 1e-8, eps = 2 ** -52):
 				coeff[np.all([w == 0.0, alpha == 0.0], axis = 0)] = 0.0
 				coeff[np.all([w == 0.0, alpha != 0.0], axis = 0)] = float("Inf")
 				coeff[np.isnan(coeff)] = 0.0
-				s = np.dot(eigvec, coeff)
-				if ((np.linalg.norm(s) > 1.2 * delta) or (np.linalg.norm(s) < 0.8 * delta)):
+				sol = np.dot(eigvec, coeff)
+				if ((np.linalg.norm(sol) > 1.2 * Delta) or (np.linalg.norm(sol) < 0.8 * Delta)):
 					key = 5
 					lmbd = -mineigval
 			else:
@@ -361,9 +241,6 @@ def trustKai(g, H, delta, tolvval = 1e-8, eps = 2 ** -52):
 		lam = lmbd * np.ones(g.size)
 		
 		if (key > 2):
-			# KIMOI code
-			#arg = abs(eigval + lam) < 10.0 * eps * max(abs(eigval), 1.0)
-			#alpha[arg] = 0.0
 			alpha[abs(eigval + lam) < 10.0 * eps * max(abs(eigval), 1.0)] = 0.0
 		
 		w = eigval + lam
@@ -371,14 +248,14 @@ def trustKai(g, H, delta, tolvval = 1e-8, eps = 2 ** -52):
 		coeff[np.all([w == 0.0, alpha == 0.0], axis = 0)] = 0.0
 		coeff[np.all([w == 0.0, alpha != 0.0], axis = 0)] = float("Inf")
 		coeff[np.isnan(coeff)] = 0.0
-		s = np.dot(eigvec, coeff)
-		nrms = np.linalg.norm(s)
+		sol = np.dot(eigvec, coeff)
+		nrms = np.linalg.norm(sol)
 		
-		if ((key > 2) and (nrms < 0.8 * delta)):
-			s += sqrt(delta ** 2 - nrms ** 2) * sig * eigvec[:, argmineigval]
+		if ((key > 2) and (nrms < 0.8 * Delta)):
+			sol += sqrt(Delta ** 2 - nrms ** 2) * sig * eigvec[:, argmineigval]
 		
-		if ((key > 2) and (nrms > 1.2 * delta)):
-			b, count = rfzero(laminit, eigval, alpha, delta)
+		if ((key > 2) and (nrms > 1.2 * Delta)):
+			b, count = rfzero(laminit, eigval, alpha, Delta)
 			lmbd = b
 			lam = lmbd * np.ones(g.size)
 			w = eigval + lam
@@ -386,13 +263,16 @@ def trustKai(g, H, delta, tolvval = 1e-8, eps = 2 ** -52):
 			coeff[np.all([w == 0.0, alpha == 0.0], axis = 0)] = 0.0
 			coeff[np.all([w == 0.0, alpha != 0.0], axis = 0)] = float("Inf")
 			coeff[np.isnan(coeff)] = 0.0
-			s = np.dot(eigvec, coeff)
+			sol = np.dot(eigvec, coeff)
 	
-	print "Solution            :", s
-	print "Radius              :", np.sqrt(np.linalg.norm(s) ** 2)
-	print "Value               :", np.dot(g, s) + 0.5 * np.dot(s, np.dot(H, s))
+	# Stop the timer
+	t_goal = clock()
+	
+	print "Solution            :", sol
+	print "Value               :", np.dot(g, sol) + 0.5 * np.dot(sol, np.dot(H, sol))
+	print "Time(ms)            :", (t_goal - t_start) * 1000.0
 	print "Iteration Count     :", count
 	print "Lagrange multiplier :", lmbd
 	print "-> Finished!!\n"
 	
-	return s, np.dot(g, s) + 0.5 * np.dot(s, np.dot(H, s)), count, lmbd
+	return sol, np.dot(g, sol) + 0.5 * np.dot(sol, np.dot(H, sol)), (t_goal - t_start) * 1000.0, count, lmbd
