@@ -5,13 +5,14 @@ The Solver for Trust Region Subproblem
 ## Description
 It is the solver that handles with the (generalized) trust region subproblem.  
 It transpalents MATLAB `trust()` method by Python 2.x.
+Please see ([File Exchange - MATLAB Central](http://www.mathworks.com/matlabcentral/fileexchange/28013-rosin-rammler-diagram-plotting-tool/content/RRD%20-%20ln/funct/trust.m))
 
 ### (Generalized) Trust Region Subproblem
 (Generalized) trust region subproblem is the following mathematical optimization problem:  
   
 ![Not Exists!](http://i.imgur.com/hr7gYq4.png "(Generalized) Trust Region Subproblem")  
   
-where ![Not Exists!](http://i.imgur.com/0CurIWu.png?1 "Given Data"){:style="vertical-align: middle;"} are the given data.If ![Not Exists!](http://i.imgur.com/yBsDWAT.png?1){:style="vertical-align: middle;"} is a positive semidefinite matrix, then the above problem is nonconvex.But We suppose that ![Not Exists!](http://i.imgur.com/yBsDWAT.png?1){:style="vertical-align: middle;"} consider a generalized matrix.
+where ![Not Exists!](http://i.imgur.com/0CurIWu.png?1 "Given Data") are the given data.If ![Not Exists!](http://i.imgur.com/yBsDWAT.png?1) is a positive semidefinite matrix, then the above problem is nonconvex.But We suppose that ![Not Exists!](http://i.imgur.com/yBsDWAT.png?1) consider a generalized matrix.
 
 ## Requirement
 [NumPy](http://www.numpy.org/) only!
