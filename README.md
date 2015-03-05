@@ -62,4 +62,4 @@ array([ 0.77053554,  1.18586465])
 ```
 
 ## Licence
-Kido Takeru([@infhyroyage](https://twitter.com/infhyroyage))
+MATLAB `trust()` is licenced by [Mathworks](http://www.mathworks.com/)
