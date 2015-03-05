@@ -62,4 +62,4 @@ array([ 0.77053554,  1.18586465])
 ```
 
 ## Licence
-MATLAB `trust()` is licenced by [Mathworks](http://www.mathworks.com/)
+MATLAB `trust()` is licenced by [Mathworks](http://www.mathworks.com/).
